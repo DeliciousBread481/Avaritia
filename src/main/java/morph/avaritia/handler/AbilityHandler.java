@@ -7,8 +7,6 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 import net.minecraft.block.material.Material;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.settings.GameSettings;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.EntityEquipmentSlot;
@@ -20,6 +18,9 @@ import net.minecraftforge.event.entity.living.LivingEvent.LivingJumpEvent;
 import net.minecraftforge.event.entity.living.LivingEvent.LivingUpdateEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.PlayerEvent;
+
+import net.minecraftforge.fml.relauncher.Side;  
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 import morph.avaritia.item.ItemArmorInfinity;
 
@@ -198,9 +199,14 @@ public class AbilityHandler {
             float speed = 0.15f * (flying ? 1.1f : 1.0f)
             // * (swimming ? 1.2f : 1.0f)
                     * (sneaking ? 0.1f : 1.0f);
+                    
+            boolean shouldSprint = entity.isSprinting();
+            if (entity.world.isRemote && ConfigHandler.betterSpeedControl) {
+                shouldSprint = shouldSprint || isSprintKeyDown();
+            }
 
             if (ConfigHandler.betterSpeedControl) {
-                if (GameSettings.isKeyDown(mc.gameSettings.keyBindSprint) || entity.isSprinting()) {
+                if (shouldSprint) {
                     if (entity.moveForward > 0f) {
                         entity.moveRelative(0f, 0f, 1f, speed);
                     } else if (entity.moveForward < 0f) {
@@ -225,6 +231,13 @@ public class AbilityHandler {
         }
     }
     // endregion
+    
+    @SideOnly(Side.CLIENT)
+    private static boolean isSprintKeyDown() {
+        return net.minecraft.client.GameSettings.isKeyDown(
+            net.minecraft.client.Minecraft.getMinecraft().gameSettings.keyBindSprint
+        );
+    }
 
     // region Ability Specific Events
     @SubscribeEvent
